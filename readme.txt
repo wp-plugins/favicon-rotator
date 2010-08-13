@@ -36,5 +36,7 @@ Go to http://archetyped.com/tools/favicon-rotator/ for any questions or comments
 1. Favicon submenu in Appearance menu
 
 == Changelog ==
+= 1.0.1 =
+* Fix: Various bugs
 = 1.0 =
 * Initial release
