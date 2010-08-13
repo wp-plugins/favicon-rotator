@@ -22,6 +22,12 @@ class FVRT_Base {
 	var $util;
 	
 	/**
+	 * Debug instance
+	 * @var FVRT_Debug
+	 */
+	var $debug;
+	
+	/**
 	 * Legacy constructor
 	 */
 	function FVRT_Base() {
@@ -33,6 +39,7 @@ class FVRT_Base {
 	 */
 	function __construct() {
 		$this->util =& new FVRT_Utilities();
+		$this->debug =& new FVRT_Debug();
 	}
 	
 	/**

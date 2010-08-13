@@ -26,6 +26,7 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 	};
 	
 	fvrt['sel'] = {
+		no_icons: '#fv_no_icons',
 		list: '#fv_list',
 		item: '.fv_item',
 		image: '.icon',
@@ -71,7 +72,13 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 	 * @return array Icon IDs
 	 */
 	fvrt['getIds'] = function() {
-		return $(this.getField()).val().split(',');
+		var ids = [];
+		var idVal = $(this.getField()).val();
+		if ( idVal.toString().length > 0 ) {
+			ids = idVal.split(',');
+			window.console.log(ids);
+		}
+		return ids;
 	};
 	
 	/**
@@ -148,6 +155,8 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 
 			//Add element ID to list
 			this.addId(args.id);
+			
+			this.setMessageVisibility();
 		}
 	};
 	
@@ -162,6 +171,18 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 		$(el).parents('.fv_item').remove();
 		//Remove ID from field
 		this.removeId(id);
+		
+		this.setMessageVisibility();
+	};
+	
+	fvrt['setMessageVisibility'] = function() {
+		window.console.log('Ids: %o \nLength: %d', this.getIds(), this.getIds().length);
+		if (this.getIds().length) 
+			$(this.sel.no_icons).hide();
+		else {
+			window.console.log('Show message');
+			$(this.sel.no_icons).show();
+		}
 	};
 	
 	//Initialize on document load
