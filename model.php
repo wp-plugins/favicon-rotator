@@ -144,11 +144,22 @@ class FaviconRotator extends FVRT_Base {
 		if ( !empty($ids) ) {
 			$icons = get_posts(array('post_type' => 'attachment', 'include' => $ids));
 		}
-		return $icons;
+		
+		//Fix icon option if invalid icons were passed
+		if ( count($icons) != count($ids) ) {
+			$ids = array();
+			foreach ( $icons as $icon ) {
+				$ids[] = $icon->ID;
+			}
+			//Save to DB
+			$this->save_icons($ids);
+		}
+		return $icons; 
 	}
 	
 	/**
 	 * Save list of selected icons to DB
+	 * @param array $ids (optional) Array of icon IDs
 	 */
 	function save_icons($ids = null) {
 		//Check if valid icon IDs are passed to function
@@ -159,12 +170,23 @@ class FaviconRotator extends FVRT_Base {
 		}
 		
 		//Get icon IDs from form submission
-		if ( is_null($ids) && isset($_POST['fv_ids']) && check_admin_referer($this->action_save) )
+		if ( is_null($ids) && isset($_POST['fv_ids']) && check_admin_referer($this->action_save) ) {
 			$ids = explode(',', $_POST['fv_ids']);
-		
+		}
 		//Save to DB
-		if ( is_array($ids) )
+		if ( is_array($ids) ) {
+			//Validate values
+			$changed = false;
+			foreach ( $ids as $key => $id ) {
+				if ( !intval($id) ) {
+					unset($ids[$key]);
+					$changed = true;
+				}
+			}
+			if ( $changed )
+				$ids = array_values($ids);
 			$this->set_option($this->opt_icons, $ids);
+		}
 	}
 	
 	/**
@@ -257,9 +279,7 @@ class FaviconRotator extends FVRT_Base {
 		<?php screen_icon(); ?>
 		<h2><?php _e('Favicon Rotator'); ?> <a href="<?php echo $this->media->get_upload_iframe_src('image'); ?>" class="button add-new-h2 thickbox" title="<?php esc_attr_e('Add Icon'); ?>"><?php echo esc_html_x('Add new', 'file')?></a></h2>
 		<div id="fv_list_container">
-			<?php if ( !$icons ) : ?>
-			<p>No favicons set</p>
-			<?php endif; //No icons message ?>
+			<p id="fv_no_icons"<?php if ( $icons ) echo ' style="display: none;"'?>>No favicons set</p>
 			<ul id="fv_list">
 			<?php foreach ( $icons as $icon ) : //List icons
 				$src = wp_get_attachment_image_src($icon->ID, 'full');
