@@ -9,7 +9,7 @@ Easily set site favicon and even rotate through multiple icons
 
 == Description ==
 
-Favicon Rotator makes it easy to customize the favicon for your site.  Just add a favicon below and it will be displayed whenever someone visits your site.
+Favicon Rotator makes it easy to customize the favicon for your site.  Just add a favicon via the administration page and it will be displayed whenever someone visits your site.
 
 Favicon Rotator supports **multiple icons**, from which a **randomly selected** favicon from the rotation will be displayed.
 
