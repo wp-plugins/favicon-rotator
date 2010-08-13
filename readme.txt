@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== Favicon Rotator ===
 Contributors: archetyped
 Tags: favicon,icon,template,theme,customization,simple,media
 Requires at least: 3.0
