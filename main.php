@@ -3,7 +3,7 @@
 Plugin Name: Favicon Rotator
 Plugin URI: http://archetyped.com/tools/favicon-rotator/
 Description: Easily set site favicon and even rotate through multiple icons
-Version: 1.0.1
+Version: 1.1
 Author: Archetyped
 Author URI: http://archetyped.com
 */

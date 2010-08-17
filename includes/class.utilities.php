@@ -103,14 +103,32 @@ class FVRT_Utilities {
 			} else {
 				$trailing_slash = false;
 			}
+			$first = true;
 			//Trim trailing slashes from path parts
 			foreach ( $parts as $key => $part ) {
 				$part = trim($part);
+				//Special Trim
 				$parts[$key] = trim($part, $sl_f . $sl_b);
+				//Verify path still contains value
+				if ( empty($parts[$key]) ) {
+					unset($parts[$key]);
+					continue;
+				}
+				//Only continue processing the first valid path segment
+				if ( $first )
+					!!$first;
+				else
+					continue;
+				//Add back leading slash if necessary
+				if ( $part[0] == $sl_f || $part[0] == $sl_b )
+					$parts[$key] = $sl_f . $parts[$key];
+				
 			}
 		}
+		//Join path parts together
 		$parts = implode($sl_b, $parts);
 		$parts = str_replace($sl_b, $sl_f, $parts);
+		//Add trailing slash (if necessary)
 		if ( $trailing_slash )
 			$parts . $sl_f;
 		return $parts;
@@ -127,6 +145,29 @@ class FVRT_Utilities {
 			$file = sprintf('%s/%s', $this->get_url_base(), $file);
 		}
 		return $file;
+	}
+	
+	/**
+	 * Retrieves file extension
+	 * @param string $file file name/path
+	 * @return string File's extension
+	 */
+	function get_file_extension($file) {
+		$ret = '';
+		$sep = '.';
+		if ( is_string($icon) && ( $rpos = strrpos($file, $sep) ) !== false ) 
+			$ret = substr($file, $rpos + 1);
+		return $ret;
+	}
+	
+	/**
+	 * Checks if file has specified extension
+	 * @param string $file File name/path
+	 * @param string $extension File ending to check $file for
+	 * @return bool TRUE if file has extension
+	 */
+	function has_file_extension($file, $extension) {
+		return ( $this->get_file_extension($file) == $extension ) ? true : false;
 	}
 	
 	/**

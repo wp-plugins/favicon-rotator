@@ -76,7 +76,6 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 		var idVal = $(this.getField()).val();
 		if ( idVal.toString().length > 0 ) {
 			ids = idVal.split(',');
-			window.console.log(ids);
 		}
 		return ids;
 	};
@@ -176,11 +175,9 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 	};
 	
 	fvrt['setMessageVisibility'] = function() {
-		window.console.log('Ids: %o \nLength: %d', this.getIds(), this.getIds().length);
 		if (this.getIds().length) 
 			$(this.sel.no_icons).hide();
 		else {
-			window.console.log('Show message');
 			$(this.sel.no_icons).show();
 		}
 	};

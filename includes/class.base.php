@@ -10,6 +10,18 @@ require_once 'class.utilities.php';
 class FVRT_Base {
 	
 	/**
+	 * Size to use for icon attachment
+	 * @var string
+	 */
+	var $icon_size = 'favicon';
+	
+	/**
+	 * Favicon Dimensions
+	 * @var array
+	 */
+	var $icon_dimensions = array('w' => '16', 'h' => '16');
+	
+	/**
 	 * Prefix for Cornerstone-related data (attributes, DB tables, etc.)
 	 * @var string
 	 */

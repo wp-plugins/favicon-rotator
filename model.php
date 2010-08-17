@@ -75,7 +75,7 @@ class FaviconRotator extends FVRT_Base {
 		add_action('admin_menu', $this->m('admin_menu'));
 		//Plugins page
 		add_filter('plugin_action_links_' . $this->util->get_plugin_base_name(), $this->m('admin_plugin_action_links'), 10, 4);
-		
+
 		/*-** Main **-*/
 		
 		//Template
@@ -201,14 +201,17 @@ class FaviconRotator extends FVRT_Base {
 			//Select one from random
 			$idx = ( count($icons) > 1 ) ? array_rand($icons) : 0;
 			$icon_id = $icons[$idx];
-			$icon = wp_get_attachment_url($icon_id);
-			if ( !$icon || ( !wp_attachment_is_image($icon_id) && 'ico' != substr($icon, strrpos($icon, '.') + 1) ) ) {
+			$icon = $this->media->get_icon_src($icon_id);
+			if ( !$icon || ( is_string($icon) && 'ico' != substr($icon, strrpos($icon, '.') + 1) ) ) {
 				//Reset variable to NULL
 				$icon = null;
 				//Remove icon from list (no longer valid)
 				unset($icons[$idx]);
 				array_values($icons);
 			}
+			//Load image src (for image attachments)
+			if ( is_array($icon) )
+				$icon = $icon[0];
 		}
 		
 		//Display icon
@@ -282,12 +285,14 @@ class FaviconRotator extends FVRT_Base {
 			<p id="fv_no_icons"<?php if ( $icons ) echo ' style="display: none;"'?>>No favicons set</p>
 			<ul id="fv_list">
 			<?php foreach ( $icons as $icon ) : //List icons
+				$icon_src = wp_get_attachment_image_src($icon->ID, $this->icon_size);
+				$icon_src = $icon_src[0];
 				$src = wp_get_attachment_image_src($icon->ID, 'full');
 				$src = $src[0]; 
 			?>
 				<li class="fv_item">
 					<div>
-						<img class="icon" src="<?php echo $src; ?>" />
+						<img class="icon" src="<?php echo $icon_src; ?>" />
 						<div class="details">
 							<div class="name"><?php echo basename($src); ?></div>
 							<div class="options">

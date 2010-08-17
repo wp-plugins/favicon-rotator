@@ -65,16 +65,37 @@ class FVRT_Media extends FVRT_Base {
 	/* Methods */
 	
 	function register_hooks() {
+		//Modify layout on media upload page
+		add_action('admin_print_styles-media-upload-popup', $this->m('upload_styles'));
+		
 		//Register handler for custom media requests
 		add_action('media_upload_' . $this->add_prefix('icon'), $this->m('upload_icon'));
-		//Display 'Set as...' button in media item box
+		
+		//Display custom UI in media item box
 		add_filter('attachment_fields_to_edit', $this->m('attachment_fields_to_edit'), 11, 2);
+		
+		//Resize icons
+		add_filter('intermediate_image_sizes', $this->m('add_intermediate_image_size'));
 		
 		//Modify tabs in upload popup for fields
 		add_filter('media_upload_tabs', $this->m('field_upload_tabs'));
 		
 		//Restrict file types in upload file dialog
 		add_filter('upload_file_glob', $this->m('upload_file_types'));
+	}
+	
+	/**
+	 * Adds icon size to intermediate images
+	 * Only added when image is uploaded by plugin
+	 * @param array $sizes Names of intermediate sizes
+	 * @return array Updated sizes
+	 */
+	function add_intermediate_image_size($sizes) {
+		if ( $this->is_custom_media() ) {
+			add_image_size($this->icon_size, $this->icon_dimensions['w'], $this->icon_dimensions['h'], true);
+			$sizes[] = $this->icon_size;
+		}
+		return $sizes;
 	}
 	
 	/**
@@ -118,6 +139,34 @@ class FVRT_Media extends FVRT_Base {
 	}
 	
 	/**
+	 * Retrieve source data for icon media
+	 * @param int $icon_id Attachment ID
+	 * @return array Image data (src, width, height)
+	 */
+	function get_icon_src($icon_id) {
+		$this->update_attachment_metadata($icon_id);
+		$icon = ( wp_attachment_is_image($icon_id) ) ? wp_get_attachment_image_src($icon_id, $this->icon_size) : wp_get_attachment_url($icon_id);
+		if ( is_string($icon) )
+			$icon = array($icon, 0, 0);
+		return $icon;
+	}
+	
+	/**
+	 * Updates image thumbnail if necessary
+	 * @param int $id Attachment ID
+	 */
+	function update_attachment_metadata($id) {
+		//Generate favicon image file (if necessary)
+		if ( ( $meta = wp_get_attachment_metadata($id) ) && !isset($meta['sizes'][$this->icon_size]) && wp_attachment_is_image($id) ) {
+			//Full metadata update
+			if ( function_exists('wp_generate_attachment_metadata') ) {
+				$data = wp_generate_attachment_metadata($id, get_attached_file($id));
+				wp_update_attachment_metadata( $id, $data );
+			}
+		}
+	}
+	
+	/**
 	 * Handles upload/selecting of an icon
 	 */
 	function upload_icon() {
@@ -131,11 +180,16 @@ class FVRT_Media extends FVRT_Base {
 			$field_var = $this->add_prefix('field');
 			$args = new stdClass();
 			$args->id = array_shift( array_keys($_POST[$this->var_setmedia]) );
-			$a =& get_post($args->id);
-			//Build object of properties to send to parent page
-			if ( ! empty($a) && wp_attachment_is_image($a->ID) ) {
-				$args->url = wp_get_attachment_url($a->ID);
-				$args->name = basename($args->url);
+			//Make sure post is valid
+			if ( wp_attachment_is_image($args->id) ) {
+				$this->update_attachment_metadata($args->id);
+				//Build object of properties to send to parent page
+				$icon = $this->get_icon_src($args->id);
+				if ( !empty($icon) ) {
+					$args->url = $icon[0];
+					$meta = wp_get_attachment_metadata($args->id); 
+					$args->name = basename( ( isset($meta['file']) && !empty($meta['file']) ) ? $meta['file'] : wp_get_attachment_url($args->id) );
+				}
 			}
 			//Build JS Arguments string
 			$arg_string = array();
@@ -173,6 +227,14 @@ class FVRT_Media extends FVRT_Base {
 		$upload_form = ( isset($_GET['tab']) && 'type_url' == $_GET['tab'] ) ? 'media_upload_type_url_form' : 'media_upload_type_form';
 		//Load UI
 		return wp_iframe( $upload_form, $type, $errors, $id );
+	}
+	
+	/**
+	 * Loads CSS Styles for media upload pages
+	 */
+	function upload_styles() {
+		if ( $this->is_custom_media() )
+			wp_enqueue_style($this->add_prefix('media'), $this->util->get_file_url('css/media.css'));
 	}
 	
 	/**
@@ -236,18 +298,16 @@ class FVRT_Media extends FVRT_Base {
 	function is_custom_media() {
 		$ret = false;
 		$action = $this->var_action;
-		$upload = false;
-		if (isset($_REQUEST[$action]))
+		if ( isset($_REQUEST[$action]) || ( isset($_REQUEST['type']) && $_REQUEST['type'] == $this->var_type ) )
 			$ret = true;
 		else {
 			$qs = array();
-			$ref = parse_url($_SERVER['HTTP_REFERER']);
+			$ref = parse_url(wp_get_referer());
 			if ( isset($ref['query']) )
 				parse_str($ref['query'], $qs);
 			if (array_key_exists($action, $qs))
 				$ret = true;
 		}
-		
 		return $ret;
 	}
 	

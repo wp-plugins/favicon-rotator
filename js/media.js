@@ -17,7 +17,7 @@ if ( typeof(fvrt) == 'undefined' || typeof(fvrt) != 'object' )
 		 *  url: Attachment URL
 		 */
 		setIcon : function (a) {
-			if ( typeof(a) == 'object' ) {
+			if ( typeof(a) == 'object' && fvrt.addItem ) {
 				fvrt.addItem(a);
 			}
 			//Close popup

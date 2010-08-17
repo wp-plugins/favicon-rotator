@@ -11,7 +11,11 @@ Easily set site favicon and even rotate through multiple icons
 
 Favicon Rotator makes it easy to customize the favicon for your site.  Just add a favicon via the administration page and it will be displayed whenever someone visits your site.
 
-Favicon Rotator supports **multiple icons**, from which a **randomly selected** favicon from the rotation will be displayed.
+#### Highlights
+* Simply point and click to add a favicon to your site
+* Support for **multiple icons**, from which a **randomly selected** favicon from the rotation will be displayed.
+* Automatic icon generation for large images (smaller files and faster loading)
+
 
 [More Information on Favicons](http://wikipedia.org/wiki/Favicon)
 
@@ -36,6 +40,10 @@ Go to http://archetyped.com/tools/favicon-rotator/ for any questions or comments
 1. Favicon submenu in Appearance menu
 
 == Changelog ==
+= 1.1 =
+* Added: Generate icon file from uploaded images
+* Added: Settings link from plugins page
+* Optimized: File path resolution
 = 1.0.1 =
 * Fix: Various bugs
 = 1.0 =
