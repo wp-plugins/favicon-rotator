@@ -3,7 +3,8 @@
 /**
  * Utility methods
  * 
- * @package Redactor
+ * @package Favicon Rotator
+ * @subpackage Utilities
  * @author Archetyped
  *
  */
