@@ -91,10 +91,13 @@ class FVRT_Media extends FVRT_Base {
 	 * @return array Updated sizes
 	 */
 	function add_intermediate_image_size($sizes) {
+		$img = array('width' => 0, 'height' => 0, 'crop' => true);
 		if ( $this->is_custom_media() ) {
-			add_image_size($this->icon_size, $this->icon_dimensions['w'], $this->icon_dimensions['h'], true);
-			$sizes[] = $this->icon_size;
+			$img['width'] = $this->icon_dimensions['w'];
+			$img['height'] = $this->icon_dimensions['h'];
 		}
+		add_image_size($this->icon_size, $img['width'], $img['height'], $img['crop']);
+		$sizes[] = $this->icon_size;
 		return $sizes;
 	}
 	
@@ -182,7 +185,6 @@ class FVRT_Media extends FVRT_Base {
 			$args->id = array_shift( array_keys($_POST[$this->var_setmedia]) );
 			//Make sure post is valid
 			if ( wp_attachment_is_image($args->id) ) {
-				$this->update_attachment_metadata($args->id);
 				//Build object of properties to send to parent page
 				$icon = $this->get_icon_src($args->id);
 				if ( !empty($icon) ) {
