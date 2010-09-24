@@ -40,6 +40,8 @@ Go to http://archetyped.com/tools/favicon-rotator/ for any questions or comments
 1. Favicon submenu in Appearance menu
 
 == Changelog ==
+= 1.1.2 =
+* Updated: Utilities code (internal)
 = 1.1 =
 * Added: Generate icon file from uploaded images
 * Added: Settings link from plugins page
