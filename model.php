@@ -4,9 +4,8 @@ require_once 'includes/class.base.php';
 require_once 'includes/class.media.php';
 
 /**
- * Redactor class
+ * @package Favicon Rotator
  * @author Archetyped
- *
  */
 class FaviconRotator extends FVRT_Base {
 	

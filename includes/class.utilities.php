@@ -117,7 +117,7 @@ class FVRT_Utilities {
 				}
 				//Only continue processing the first valid path segment
 				if ( $first )
-					!!$first;
+					$first = !$first;
 				else
 					continue;
 				//Add back leading slash if necessary
@@ -142,8 +142,7 @@ class FVRT_Utilities {
 	 */
 	function get_file_url($file) {
 		if (is_string($file) && '' != trim($file)) {
-			$file = ltrim(trim($file), '/');
-			$file = sprintf('%s/%s', $this->get_url_base(), $file);
+			$file = $this->normalize_path($this->get_url_base(), $file);
 		}
 		return $file;
 	}
@@ -298,14 +297,14 @@ class FVRT_Utilities {
 	 *     - If the current item's value OR the corresponding item in the base array is NOT an array, current item overwrites base item
 	 * @todo Append numerical elements (as opposed to overwriting element at same index in base array)
 	 * @param array Variable number of arrays
+	 * @param array $arr1 Default array
 	 * @return array Merged array
 	 */
-	function array_merge_recursive_distinct() {
+	function array_merge_recursive_distinct($arr1) {
 		//Get all arrays passed to function
 		$args = func_get_args();
 		if (empty($args))
 			return false;
-		$this->debug = new CNR_Debug();
 		//Set first array as base array
 		$merged = $args[0];
 		//Iterate through arrays to merge
@@ -461,12 +460,68 @@ class FVRT_Utilities {
 		return $ret;
 	}
 	
+	/**
+	 * Generate external stylesheet element
+	 * @param $url Stylesheet URL
+	 * @return string Stylesheet element
+	 */
+	function build_stylesheet_element($url = '') {
+		$attributes = array('href' => $url, 'type' => 'text/css', 'rel' => 'stylesheet');
+		return $this->build_html_element(array('tag' => 'link', 'wrap' => false, 'attributes' => $attributes));
+	}
+	
+	/**
+	 * Generate external script element
+	 * @param $url Script URL
+	 * @return string Script element
+	 */
+	function build_ext_script_element($url = '') {
+		$attributes = array('src' => $url, 'type' => 'text/javascript');
+		return $this->build_html_element(array('tag' => 'script', 'attributes' => $attributes));
+	}
+	
+	/**
+	 * Generate HTML element based on values
+	 * @param $args Element arguments
+	 * @return string Generated HTML element
+	 */
+	function build_html_element($args) {
+		$defaults = array(
+						'tag'			=> 'span',
+						'wrap'			=> true,
+						'content'		=> '',
+						'attributes'	=> array()
+						);
+		$el_start = '<';
+		$el_end = '>';
+		$el_close = '/';
+		extract(wp_parse_args($args, $defaults), EXTR_SKIP);
+		$content = trim($content);
+		
+		if ( !$wrap && strlen($content) > 0 )
+			$wrap = true;
+		
+		$attributes = $this->build_attribute_string($attributes);
+		if ( strlen($attributes) > 0 )
+			$attributes = ' ' . $attributes;
+			
+		$ret = $el_start . $tag . $attributes;
+		
+		if ( $wrap )
+			$ret .= $el_end . $content . $el_start . $el_close . $tag;
+		else
+			$ret .= ' ' . $el_close;
+
+		$ret .= $el_end;
+		return $ret;	
+	}
+	
 	/*-** Admin **-*/
 	
 	/**
 	 * Add submenu page in the admin menu
 	 * Adds ability to set the position of the page in the menu
-	 * @see add_submin_menu (Wraps functionality)
+	 * @see add_submenu_page (Wraps functionality)
 	 * 
 	 * @param $parent
 	 * @param $page_title
@@ -478,30 +533,29 @@ class FVRT_Utilities {
 	 * 
 	 * @global array $submenu Admin page submenus
 	 */
-	function add_submenu_page($parent, $page_title, $menu_title, $access_level, $file, $function = '', $pos = false) {
-		global $submenu;
-		
+	function add_submenu_page($parent, $page_title, $menu_title, $capability, $file, $function = '', $pos = false) {
 		//Add submenu page as usual
 		$args = func_get_args();
 		$hookname = call_user_func_array('add_submenu_page', $args);
-		
 		if ( is_int($pos) ) {
+			global $submenu;
 			//Get last submenu added
 			$parent = $this->get_submenu_parent_file($parent);
-			$subs =& $submenu[$parent];
-
-			//Make sure menu isn't already in the desired position
-			if ( $pos <= ( count($subs) - 1 ) ) {
-				//Get submenu that was just added
-				$sub = array_pop($subs);
-				//Insert into desired position
-				if ( 0 == $pos ) {
-					array_unshift($subs, $sub);
-				} else {
-					$top = array_slice($subs, 0, $pos);
-					$bottom = array_slice($subs, $pos);
-					array_push($top, $sub);
-					$subs = array_merge($top, $bottom);
+			if ( isset($submenu[$parent]) ) {
+				$subs =& $submenu[$parent];
+				//Make sure menu isn't already in the desired position
+				if ( $pos <= ( count($subs) - 1 ) ) {
+					//Get submenu that was just added
+					$sub = array_pop($subs);
+					//Insert into desired position
+					if ( 0 == $pos ) {
+						array_unshift($subs, $sub);
+					} else {
+						$top = array_slice($subs, 0, $pos);
+						$bottom = array_slice($subs, $pos);
+						array_push($top, $sub);
+						$subs = array_merge($top, $bottom);
+					}
 				}
 			}
 		}
