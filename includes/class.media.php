@@ -19,7 +19,13 @@ class FVRT_Media extends FVRT_Base {
 	 * Prefix added upon instantiation
 	 * @var string
 	 */
-	var $var_type = 'icon';
+	var $var_type = 'media';
+	
+	/**
+	 * Query data identifier
+	 * @var string
+	 */
+	var $var_query_data = 'data';
 	
 	/**
 	 * Query var used to set media upload action
@@ -48,6 +54,18 @@ class FVRT_Media extends FVRT_Base {
 	var $upload_url_args;
 	
 	/**
+	 * Intermediate media types
+	 * @var array
+	 */
+	var $types = array();
+	
+	/**
+	 * Name of type for current request
+	 * @var string
+	 */
+	var $type_current = null;
+	
+	/**
 	 * Legacy Constructor
 	 */
 	function FVRT_Media() {
@@ -69,7 +87,14 @@ class FVRT_Media extends FVRT_Base {
 		add_action('admin_print_styles-media-upload-popup', $this->m('upload_styles'));
 		
 		//Register handler for custom media requests
-		add_action('media_upload_' . $this->add_prefix('icon'), $this->m('upload_icon'));
+		add_action('media_upload_' . $this->var_type, $this->m('upload_media'));
+		
+		//Limit mime types for custom requests
+		add_filter('post_mime_types', $this->m('post_mime_types'));
+		
+		add_filter('media_upload_mime_type_links', $this->m('media_upload_mime_type_links'));
+		
+		add_filter('parse_query', $this->m('set_query_mime_types'));
 		
 		//Display custom UI in media item box
 		add_filter('attachment_fields_to_edit', $this->m('attachment_fields_to_edit'), 11, 2);
@@ -78,7 +103,10 @@ class FVRT_Media extends FVRT_Base {
 		add_filter('intermediate_image_sizes', $this->m('add_intermediate_image_size'));
 		
 		//Modify tabs in upload popup for fields
-		add_filter('media_upload_tabs', $this->m('field_upload_tabs'));
+		add_filter('media_upload_tabs', $this->m('upload_tabs'));
+		
+		//Modifies media upload query vars so that request is routed through plugin
+		add_filter('media_upload_form_url', $this->m('upload_url'), 10, 2);
 		
 		//Restrict file types in upload file dialog
 		add_filter('upload_file_glob', $this->m('upload_file_types'));
@@ -91,13 +119,12 @@ class FVRT_Media extends FVRT_Base {
 	 * @return array Updated sizes
 	 */
 	function add_intermediate_image_size($sizes) {
-		$img = array('width' => 0, 'height' => 0, 'crop' => true);
-		if ( $this->is_custom_media() ) {
-			$img['width'] = $this->icon_dimensions['w'];
-			$img['height'] = $this->icon_dimensions['h'];
+		$p = $this->get_request_props();
+		if ( !!$p && $p->width && $p->height ) {
+			$crop = true;
+			add_image_size($p->type_name, $p->width, $p->height, $crop);
+			$sizes[] = $p->type_name;
 		}
-		add_image_size($this->icon_size, $img['width'], $img['height'], $img['crop']);
-		$sizes[] = $this->icon_size;
 		return $sizes;
 	}
 	
@@ -113,7 +140,6 @@ class FVRT_Media extends FVRT_Base {
 		}
 	}
 	
-	
 	/**
 	 * Sets acceptable file types for uploading
 	 * Also sets File dialog description (hacky but works)
@@ -122,45 +148,109 @@ class FVRT_Media extends FVRT_Base {
 	 */
 	function upload_file_types($types) {
 		if ( $this->is_custom_media() ) {
-			$filetypes = '*.' . implode(';*.', array('png', 'gif', 'jpg', 'ico'));
-			$types = esc_js($filetypes) . '",file_types_description: "' . esc_js(__('Favicon files'));
+			$p = $this->get_request_props();
+			$filetypes = '*.' . implode(';*.', $p->file_type);
+			$types = esc_js($filetypes) . '",file_types_description: "' . esc_js(__($p->file_desc));
 		}
 		return $types;
 	}
 	
+	function set_query_mime_types(&$q) {
+		$var = 'post_mime_type';
+		if ( $this->is_custom_media() && 'attachment' == $q->query_vars['post_type'] && empty($q->query_vars[$var]) ) {
+			$qv =& $q->query_vars;
+			$p = $this->get_request_props();
+			//Set GET variable when single mime type specified (for future queries)
+			if ( !!$p && isset($p->file_mime) && is_array($p->file_mime) )
+				$qv[$var] = $p->file_mime;
+		}
+	}
+	
 	/**
-	 * Modifies media upload URL to work with plugin attachments
+	 * Modifies media upload URL to work with plugin
 	 * @param string $url Full admin URL
-	 * @param string $path Path part of URL
+	 * @param string $type Media type
 	 * @return string Modified media upload URL
 	 */
-	function media_upload_url($url) {
-		if ( strpos($url, 'media-upload.php') === 0 ) {
-			$url = add_query_arg(array($this->var_action => 1, 'type' => $this->var_type, 'tab' => 'type'), $url);
+	function upload_url($url, $type = null) {
+		$args = ( is_array($type) ) ? $type : array();
+		$custom = ( ( is_string($type) && 0 === strpos($type, $this->add_prefix('')) ) || !empty($args) ) ? true : $this->is_custom_media($url);
+		$p = parse_url($url);
+		$p = basename( ( isset($p['path']) ) ? $p['path'] : $url );
+		if ( strpos($p, 'media-upload.php') === 0 && $custom ) {
+			$defaults = array(
+				'type'				=> $this->var_type,
+				'tab'				=> 'type'
+			);
+			$u = ( is_string($type) ) ? null : $url;
+			//Parse URL
+			$q = wp_parse_args($args, $this->get_request_args($u));
+			//Check for tab variable
+			if ( isset($q['tab']) && 'type' != $q['tab'] ) {
+				//Replace tab value
+				$defaults[$this->add_prefix('tab')] = $q['tab'];
+			}
+			//Move Thickbox query args to end of URL
+			$tb = array();
+			foreach ( $q as $key => $val ) {
+				if ( 0 === strpos($key, 'TB_') ) {
+					//Add arg to temp array
+					$tb[$key] = $val;
+					//Remove from query array
+					$defaults[$key] = false;
+				}
+			}
+			unset($q);
+			
+			//Build URL query
+			$args = ( is_array($type) ) ? wp_parse_args($type, $defaults) : $defaults;
+			$url = add_query_arg($args, $url);
+			//Add thickbox args back to URL
+			if ( count($tb) )
+				$url = add_query_arg($tb, $url);
 		}
 		return $url;
 	}
 	
 	/**
 	 * Retrieve source data for icon media
+	 * Updates metadata (intermediate sizes, etc.) if necessary
 	 * @param int $icon_id Attachment ID
 	 * @return array Image data (src, width, height)
 	 */
-	function get_icon_src($icon_id) {
-		$this->update_attachment_metadata($icon_id);
-		$icon = ( wp_attachment_is_image($icon_id) ) ? wp_get_attachment_image_src($icon_id, $this->icon_size) : wp_get_attachment_url($icon_id);
-		if ( is_string($icon) )
+	function get_icon_src($icon_id, $type = null) {
+		//Add intermediate size (if necessary)
+		$type = $this->set_type_current($type);
+		$this->update_attachment_metadata($icon_id, $type);
+		if ( !$type ) {
+			$p = $this->get_request_props();
+			$type = $p->type_name;
+		} else {
+			$type = $type->type_name;
+		}
+		$icon = ( wp_attachment_is_image($icon_id) && is_string($type) ) ? wp_get_attachment_image_src($icon_id, $type) : wp_get_attachment_url($icon_id);
+		if ( !is_array($icon) )
 			$icon = array($icon, 0, 0);
+		$this->clear_type_current();
 		return $icon;
 	}
 	
 	/**
-	 * Updates image thumbnail if necessary
+	 * Updates image intermediate size if necessary
 	 * @param int $id Attachment ID
 	 */
-	function update_attachment_metadata($id) {
-		//Generate favicon image file (if necessary)
-		if ( ( $meta = wp_get_attachment_metadata($id) ) && !isset($meta['sizes'][$this->icon_size]) && wp_attachment_is_image($id) ) {
+	function update_attachment_metadata($id, $type = null) {
+		$type = $this->get_type($type);
+		if ( !$type ) {
+			$p = $this->get_request_props();
+			if ( !$p )
+				return false;
+			$type = $p->type_name;
+		} else {
+			$type = $type->type_name;
+		}
+		//Generate intermediate size (if necessary)
+		if ( wp_attachment_is_image($id) && ( $meta = wp_get_attachment_metadata($id) ) && !isset($meta['sizes'][$type]) ) {
 			//Full metadata update
 			if ( function_exists('wp_generate_attachment_metadata') ) {
 				$data = wp_generate_attachment_metadata($id, get_attached_file($id));
@@ -172,27 +262,31 @@ class FVRT_Media extends FVRT_Base {
 	/**
 	 * Handles upload/selecting of an icon
 	 */
-	function upload_icon() {
+	function upload_media() {
 		$errors = array();
 		$id = 0;
-		
 		//Process media selection
 		if ( isset($_POST[$this->var_setmedia]) ) {
 			/* Send image data to main post edit form and close popup */
 			//Get Attachment ID
-			$field_var = $this->add_prefix('field');
 			$args = new stdClass();
 			$args->id = array_shift( array_keys($_POST[$this->var_setmedia]) );
 			//Make sure post is valid
 			if ( wp_attachment_is_image($args->id) ) {
+				$p = $this->get_request_props();
+				
 				//Build object of properties to send to parent page
 				$icon = $this->get_icon_src($args->id);
 				if ( !empty($icon) ) {
 					$args->url = $icon[0];
 					$meta = wp_get_attachment_metadata($args->id); 
 					$args->name = basename( ( isset($meta['file']) && !empty($meta['file']) ) ? $meta['file'] : wp_get_attachment_url($args->id) );
+					if ( isset($p->type_name) ) {
+						$args->type_name = $p->type_name;
+					}
 				}
 			}
+			
 			//Build JS Arguments string
 			$arg_string = array();
 			foreach ( (array)$args as $key => $val ) {
@@ -240,6 +334,58 @@ class FVRT_Media extends FVRT_Base {
 	}
 	
 	/**
+	 * Filter mime types for custom requests
+	 * @see `post_mime_types` hook to filter mime types
+	 * @see get_post_mime_types()
+	 * @uses $_GET to set post_mime_type variable (if necessary)
+	 * @param array $post_mime_types Default post mime types
+	 * @return array Filtered mime types
+	 */
+	function post_mime_types($post_mime_types) {
+		global $wp_query;
+		if ( $this->is_custom_media() && ( $p = $this->get_request_props() ) && isset($p->file_mime) ) {
+			//Save original mime types
+			$mime_types = $post_mime_types;
+			//Add additional mime types
+			$mime_types_extra = array(
+				'image/png'		=> array(__('PNG Images'), __('Manage PNG Images'), _n_noop('PNG Image <span class="count">(%s)</span>', 'PNG Images <span class="count">(%s)</span>')),
+				'image/gif'		=> array(__('GIF Images'), __('Manage GIF Images'), _n_noop('GIF Image <span class="count">(%s)</span>', 'GIF Images <span class="count">(%s)</span>')),
+				'image/jpeg'	=> array(__('JPG Images'), __('Manage JPG Images'), _n_noop('JPG Image <span class="count">(%s)</span>', 'JPG Images <span class="count">(%s)</span>')),
+				'image/x-icon'	=> array(__('ICO Images'), __('Manage ICO Images'), _n_noop('ICO Image <span class="count">(%s)</span>', 'ICO Images <span class="count">(%s)</span>'))
+			);
+			$mime_types = wp_parse_args($mime_types_extra, $mime_types);
+			//Clear mime types array
+			$post_mime_types = array();
+			foreach ( $p->file_mime as $mime ) {
+				if ( isset($mime_types[$mime]) )
+					$post_mime_types[$mime] = $mime_types[$mime];
+			}
+			//Set GET variable when single mime type specified (for future queries)
+			$var = 'post_mime_type';
+			if ( empty($_GET[$var]) && !!$p && isset($p->file_mime) && is_array($p->file_mime) && count($p->file_mime) == 1 )
+				$_GET[$var] = $p->file_mime;
+		
+		}
+		return $post_mime_types;
+	}
+	
+	/**
+	 * Filter mime type links for custom requests
+	 * @see `media_upload_mime_type_links` hook to filter mime types
+	 * @see media_upload_library_form()
+	 * @param array $type_links Default mime type links
+	 * @return array Filtered mime type links
+	 */
+	function media_upload_mime_type_links($type_links) {
+		global $wp_query;
+		if ( $this->is_custom_media() && ( $p = $this->get_request_props() ) && isset($p->file_mime) && count($p->file_mime) == 1 ) {
+			//Remove ALL media type link for requests that specify a SINGLE mime type
+			array_shift($type_links);
+		}
+		return $type_links;
+	}
+	
+	/**
 	 * Modifies array of form fields to display on Attachment edit form
 	 * Array items are in the form:
 	 * 'key' => array(
@@ -252,34 +398,43 @@ class FVRT_Media extends FVRT_Base {
 	 * @param object $attachment Attachment post object
 	 */
 	function attachment_fields_to_edit($form_fields, $attachment) {
-		
 		if ( $this->is_custom_media() ) {
 			$post =& get_post($attachment);
 			//Clear all form fields
 			$form_fields = array();
-			
-			//Add "Set as Image" button (if valid attachment type)
-			if ( isset($post->post_type) && strpos($post->post_mime_type, 'image/') === 0 ) {
-				$set_as = __('Add icon');
+			if ( isset($post->post_mime_type) && 0 === strpos($post->post_mime_type, 'image/') && ( $q = $this->get_request_props() ) && false !== $q ) {
+				$html = array();
+				$type = 'hidden';
+				$name_base = $this->var_query_data . '[' . $post->ID . '][%1$s]';
+				$name_base_sub = $name_base . '[%2$s]';
+				//Create fields for all custom parameters
+				foreach ( (array)$q as $prop => $val ) {
+					//Build multiple fields for array values
+					if ( is_array($val) ) {
+						foreach ( $val as $akey => $aval ) {
+							$name = sprintf($name_base_sub, $prop, $akey);
+							$html[] = $this->util->build_input_element($type, $name, $aval);
+						}
+					} else {
+						$name = sprintf($name_base, $prop);
+						$html[] = $this->util->build_input_element($type, $name, $val);
+					}
+				}
+				//Add custom fields
+				if ( !empty($html) ) {
+					$form_fields[$this->var_query_data] = array('input' => 'html', 'html' => implode('', $html));
+				}
+				
+				//Add "Set as Image" button (if valid attachment type)
+				$set_as = __( ( isset($q->lbl_set) ) ? $q->lbl_set : 'Set Media' );
+				$field_name = sprintf('%1$s[%2$s]', $this->var_setmedia, $post->ID);
+				$field_html = $this->util->build_input_element('submit', $field_name, $set_as, array('class' => 'button'));
 				$field = array(
 					'input'		=> 'html',
-					'html'		=> '<input type="submit" class="button" value="' . $set_as . '" name="' . $this->var_setmedia . '[' . $post->ID . ']" />'
+					'html'		=> $field_html
 				);
-				//Add field ID value as hidden field (if set)
-				if ( isset($_REQUEST[$this->var_type]) ) {
-					$field = array(
-								'input'	=> 'hidden',
-								'value'	=> $_REQUEST[$this->var_type]
-								);
-					$form_fields[$this->var_type] = $field;
-				}
-			} else {
-				$field = array(
-					'input' => 'hidden',
-					'value' => ''
-				);
+				$form_fields['buttons'] = $field;
 			}
-			$form_fields['buttons'] = $field;
 		}
 		return $form_fields;
 	}
@@ -295,22 +450,104 @@ class FVRT_Media extends FVRT_Base {
 	}
 	
 	/**
-	 * Checks whether current media upload/selection request is initiated by the plugin
+	 * Retrieve raw parameters for current media selection/upload request
+	 * @return array Parameters
 	 */
-	function is_custom_media() {
-		$ret = false;
-		$action = $this->var_action;
-		if ( isset($_REQUEST[$action]) || ( isset($_REQUEST['type']) && $_REQUEST['type'] == $this->var_type ) )
-			$ret = true;
-		else {
-			$qs = array();
-			$ref = parse_url(wp_get_referer());
-			if ( isset($ref['query']) )
-				parse_str($ref['query'], $qs);
-			if (array_key_exists($action, $qs))
-				$ret = true;
+	function get_request_args($url = null) {
+		$q = array();
+		$u = null;
+		if ( is_string($url) && !empty($url) )
+			$u = $url;
+		//Use referrer for async uploads
+		elseif ( 'async-upload' == basename($_SERVER['SCRIPT_NAME'], '.php') )
+			$u = wp_get_referer();
+		
+		if ( !is_null($u) ) {
+			//Parse referrer
+			$u = parse_url($u);
+			if ( isset($u['query']) )
+				parse_str($u['query'], $q);
+		} else {
+			$q = $_REQUEST;
 		}
-		return $ret;
+		return $q;
+	}
+	
+	/**
+	 * Retrieve properties of current media request
+	 * Retrieves current type as fallback
+	 * @param string (optional) $url URL to parse
+	 * @return object|bool Properties object (FALSE if no properties exist)
+	 */
+	function get_request_props($url = null) {
+		$p = array();
+		$q = $this->get_request_args($url);
+		$c = array();
+		//Get form post data (if set)
+		if ( isset($q[$this->var_setmedia]) && isset($q[$this->var_query_data]) ) {
+			$id = array_shift(array_keys($q[$this->var_setmedia]));
+			//Save form data
+			if ( isset($q[$this->var_query_data][$id]) ) {
+				$c = $q[$this->var_query_data][$id];
+				//Remove from args array
+				unset($q[$this->var_query_data]);
+			}
+		}
+		$prefix = $this->add_prefix('');
+		foreach ( $q as $arg => $val ) {
+			//Process all custom query args
+			if ( 0 !== strpos($arg, $prefix) )
+				continue;
+			$arg = substr($arg, strlen($prefix));
+			$p[$arg] = $val;
+		}
+		//Add form data
+		if ( !empty($c) )
+			$p = array_merge($p, $c);
+		
+		//Retrieve curren type as callback
+		if ( empty($p) ) {
+			$p = $this->get_type_current();
+			if ( !!$p )
+				$p = get_object_vars($p);
+		}
+			
+		//Finalize
+		if ( !empty($p) ) {
+			//Remap properties
+			$remap = array(
+				'media'		=> 'type_name'
+			);
+			foreach ( $remap as $from => $to ) {
+				if ( !isset($p[$from]) )
+					continue;
+				$p[$to] = $p[$from];
+				unset($p[$from]);
+			}
+			
+			//Add default properties
+			$p = (object) wp_parse_args($p, array(
+				'type_name'		=> 'media',
+				'width'			=> 0,
+				'height'		=> 0
+			));
+		} else {
+			$p = false;
+		}
+		
+		return $p;
+	}
+	
+	/**
+	 * Checks whether media upload/selection request is initiated by the plugin
+	 * Checks current request by default
+	 * @param string $url (optional) URL to check
+	 * @return bool TRUE if URL is custom media
+	 */
+	function is_custom_media($url = null) {
+		$type = $this->var_type;
+		$q = $this->get_request_args($url);
+		return ( isset($q['type']) && $type == $q['type'] ) ? true : false;
 	}
 	
 	/**
@@ -319,19 +556,8 @@ class FVRT_Media extends FVRT_Base {
 	 * @return string Upload URI
 	 */
 	function get_upload_iframe_src($type = 'media', $args = null) {
-		//Build filter tag and callback method
-		$tag = $type . '_upload_iframe_src';
-		$callback =& $this->m('media_upload_url');
-		//Load arguments into instance
-		$this->load_upload_args($args);
-		//Add filter 
-		add_filter($tag, $callback);
 		//Build Upload URI
-		$ret = get_upload_iframe_src($type);
-		//Remove filter
-		remove_filter($tag, $callback);
-		//Clear arguments from instance
-		$this->unload_upload_args();
+		$ret = $this->upload_url(get_upload_iframe_src($type), $args);
 		//Return URI
 		return $ret;
 	}
@@ -351,7 +577,7 @@ class FVRT_Media extends FVRT_Base {
 	 * @uses load_upload_args()
 	 */
 	function unload_upload_args() {
-		$this->load_upload_args(null);	
+		$this->load_upload_args(null);
 	}
 	
 	/*-** Field-Specific **-*/
@@ -363,9 +589,11 @@ class FVRT_Media extends FVRT_Base {
 	 * @see media_upload_tabs() for full $default_tabs array
 	 * @return array Modified tabs array
 	 */
-	function field_upload_tabs($default_tabs) {
-		if ( $this->is_custom_media() )
+	function upload_tabs($default_tabs) {
+		if ( $this->is_custom_media() ) {
 			unset($default_tabs['type_url']);
+			$p = $this->get_request_props();
+		}
 		return $default_tabs;
 	}
 	
@@ -586,5 +814,92 @@ class FVRT_Media extends FVRT_Base {
 		}
 		return $ret;
 	}
+	
+	/* Media Types */
+	
+	/**
+	 * Add media type to collection
+	 * Saves properties as object
+	 * @param string $name Type Name
+	 * @param array|object $props Type Properties
+	 * @return object Type properties
+	 */
+	function register_type($name, $props = null) {
+		$defaults = array(
+			'lbl_title' 	=> '',
+			'lbl_set'		=> 'Set Media',
+			'file_mime'		=> array('image/png', 'image/gif', 'image/jpeg'),
+			'file_type'		=> array('png', 'gif', 'jpg'),
+			'file_desc'		=> 'Icon Files',
+			'width'			=> 0,
+			'height'		=> 0
+		);
+		
+		$props = wp_parse_args($props, $defaults);
+		$props['type_name'] = $name;
+		$this->types[$name] = (object) $props;
+		return $this->types[$name];
+	}
+	
+	/**
+	 * Retrieve all registered media types
+	 * @return array Media types (as a reference)
+	 */
+	function &get_types() {
+		return $this->types;
+	}
+	
+	/**
+	 * Retrieve media type
+	 * @param object|bool $type Type properties (FALSE if type not registered)
+	 */
+	function get_type($type) {
+		//Normalize
+		if ( is_object($type) ) 
+			$type = get_object_vars($type);
+		if ( is_array($type) && isset($type['name']) )
+			$type = $type['name'];
+		if ( !is_string($type) )
+			$type = strval($type);
+			
+		$types =& $this->get_types();
+		//Fetch type
+		if ( isset($types[$type]) )
+			return $types[$type];
+		//Return FALSE if type does not exist
+		return false;
+	}
+
+	/**
+	 * Set type for current request
+	 * @param mixed $type Type to set
+	 * @return object Current type (normalized)
+	 */
+	function set_type_current($type) {
+		$type = $this->get_type($type);
+		if ( !$type )
+			$this->clear_type_current();
+		else {
+			$this->type_current = $type->type_name;	
+		}
+		return $type;
+	}
+	
+	/**
+	 * Retrieve current type
+	 * @return object|bool Current type (FALSE if no type set)
+	 */
+	function get_type_current() {
+		return $this->get_type($this->type_current);
+	}
+	
+	/**
+	 * Clear type from current request
+	 */
+	function clear_type_current() {
+		$this->type_current = null;
+	}
+		
+		
 }
 ?>

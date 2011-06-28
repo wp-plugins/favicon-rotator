@@ -481,6 +481,21 @@ class FVRT_Utilities {
 	}
 	
 	/**
+	 * Generate input element
+	 * @param string $type (optional) Input type
+	 * @param string $name (optional) Input name
+	 * @param mixed $value (optional) Input value
+	 * @param array $attributes (optional) Additional attributes
+	 */
+	function build_input_element($type = 'text', $name = '', $value = '', $attributes = array()) {
+		//Build attributes
+		$attributes = wp_parse_args($attributes, array('type' => $type, 'name' => $name, 'value' => $value));
+		//Build element
+		$el = array('tag' => 'input', 'wrap' => false, 'attributes' => $attributes);
+		return $this->build_html_element($el);
+	}
+	
+	/**
 	 * Generate HTML element based on values
 	 * @param $args Element arguments
 	 * @return string Generated HTML element

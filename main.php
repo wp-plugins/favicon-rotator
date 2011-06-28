@@ -1,9 +1,9 @@
 <?php
 /* 
 Plugin Name: Favicon Rotator
-Plugin URI: http://archetyped.com/tools/favicon-rotator/
+Plugin URI: http://archetyped.com/lab/fir-1-2-beta/
 Description: Easily set site favicon and even rotate through multiple icons
-Version: 1.1.2
+Version: 1.2b1 (BETA TESTING)
 Author: Archetyped
 Author URI: http://archetyped.com
 */

@@ -1,8 +1,9 @@
 === Favicon Rotator ===
-Contributors: archetyped
-Tags: favicon,icon,template,theme,customization,simple,media
-Requires at least: 3.0
-Tested up to: 3.0.1
+Contributors: Archetyped
+Donate link: http://archetyped.com/tools/favicon-rotator/#donate
+Tags: favicon,icon,template,theme,customization,simple,media,touch,ios,android
+Requires at least: 3.1.3
+Tested up to: 3.2
 Stable tag: trunk
 
 Easily set site favicon and even rotate through multiple icons
@@ -11,20 +12,34 @@ Easily set site favicon and even rotate through multiple icons
 
 Favicon Rotator makes it easy to customize the favicon for your site.  Just add a favicon via the administration page and it will be displayed whenever someone visits your site.
 
+### BETA NOTES
+The current release is a beta version.  Please test and [provide feedback on the beta release page](http://archetyped.com/lab/fir-1-2-beta/).
+Main changes
+
+#### Beta 1
+* Add: Support for setting Touch icon (iOS, Android, etc.)
+
 #### Highlights
+* **New: Add icon for Touch devices (Android, iPhone, iPad, iPod Touch, etc.)**
 * Simply point and click to add a favicon to your site
-* Support for **multiple icons**, from which a **randomly selected** favicon from the rotation will be displayed.
-* Automatic icon generation for large images (smaller files and faster loading)
+* Supports adding **multiple icons**, from which a **randomly selected** favicon will be displayed.
+* Automatic icon conversion for large images (smaller files and faster loading)
 
+#### Usage
+1. Go to **Theme > Favicon** admin page to add/upload image(s) to use for the favicon
 
-[More Information on Favicons](http://wikipedia.org/wiki/Favicon)
+**That’s it! The favicon will be displayed in visitors' browsers when they visit your site**
+
+**Notes**
+
+* Verify that your theme uses the `wp_head()` template tag
+* If you add multiple icons, then a randomly selected icon will be displayed each time the site is loaded
+
+[More Information on Favicon Rotator's Official Page](http://archetyped.com/tools/favicon-rotator/)
 
 == Installation ==
 
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Go to **Theme > Favicon** admin page to add images to use for the favicon
-1. Verify that your theme uses the `wp_head()` template tag (this is where the necessary code will be added to your theme output)
-1. Plugin will automatically add a favicon from the rotation to your theme when a visitor loads your site
+1. Install and activate via admin dashboard
 
 == Upgrade Notice ==
 
@@ -32,7 +47,7 @@ No upgrade notices
 
 == Frequently Asked Questions ==
 
-Go to http://archetyped.com/tools/favicon-rotator/ for any questions or comments
+[Please post questions/feedback on the beta release page](http://archetyped.com/lab/fir-1-2-beta/)
 
 == Screenshots ==
 

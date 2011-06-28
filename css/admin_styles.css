@@ -31,6 +31,11 @@
 	height: 16px;
 }
 
+#fv_item_wrap_touch .fv_item .icon {
+	width: 114px;
+	height: 114px;
+}
+
 .fv_item .remove {
 	background: url('../images/icon_close.gif') no-repeat;
 	text-indent: -2000em;
@@ -45,4 +50,14 @@
 
 .fv_item a:hover.remove {
 	opacity: 1;
+}
+
+.fv_btn {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-weight: normal;
+}
+
+.fv_container {
+	clear: all;
+	overflow: hidden;
 }
