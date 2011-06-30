@@ -12,13 +12,6 @@ Easily set site favicon and even rotate through multiple icons
 
 Favicon Rotator makes it easy to customize the favicon for your site.  Just add a favicon via the administration page and it will be displayed whenever someone visits your site.
 
-### BETA NOTES
-The current release is a beta version.  Please test and [provide feedback on the beta release page](http://archetyped.com/lab/fir-1-2-beta/).
-Main changes
-
-#### Beta 1
-* Add: Support for setting Touch icon (iOS, Android, etc.)
-
 #### Highlights
 * **New: Add icon for Touch devices (Android, iPhone, iPad, iPod Touch, etc.)**
 * Simply point and click to add a favicon to your site
@@ -47,7 +40,7 @@ No upgrade notices
 
 == Frequently Asked Questions ==
 
-[Please post questions/feedback on the beta release page](http://archetyped.com/lab/fir-1-2-beta/)
+[Please post questions/feedback Favicon Rotator's Official page](http://archetyped.com/tools/favicon-rotator/)
 
 == Screenshots ==
 
@@ -55,6 +48,8 @@ No upgrade notices
 1. Favicon submenu in Appearance menu
 
 == Changelog ==
+= 1.2 =
+* Add: Support for setting Touch icon (iOS, Android, etc.)
 = 1.1.2 =
 * Updated: Utilities code (internal)
 = 1.1 =
