@@ -21,7 +21,7 @@ Favicon Rotator makes it easy to customize the favicon for your site.  Just add 
 #### Usage
 1. Go to **Theme > Favicon** admin page to add/upload image(s) to use for the favicon
 
-**That’s it! The favicon will be displayed in visitors' browsers when they visit your site**
+**That's it! The favicon will be displayed in visitors' browsers when they visit your site**
 
 **Notes**
 
