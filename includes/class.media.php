@@ -805,7 +805,7 @@ class FVRT_Media extends FVRT_Base {
 				$attribs = '';
 				$attr_format = '%s="%s"';
 				foreach ($attributes as $attr => $val) {
-					$attribs .= sprintf($attr_format, $attr, attribute_escape($val));
+					$attribs .= sprintf($attr_format, $attr, esc_attr($val));
 				}
 				$attributes = $attribs;
 			}
