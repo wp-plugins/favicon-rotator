@@ -3,7 +3,7 @@ Contributors: Archetyped
 Donate link: http://archetyped.com/tools/favicon-rotator/#donate
 Tags: favicon,icon,template,theme,customization,simple,media,touch,ios,android
 Requires at least: 3.1.3
-Tested up to: 3.2
+Tested up to: 3.3
 Stable tag: trunk
 
 Easily set site favicon and even rotate through multiple icons
@@ -13,7 +13,7 @@ Easily set site favicon and even rotate through multiple icons
 Favicon Rotator makes it easy to customize the favicon for your site.  Just add a favicon via the administration page and it will be displayed whenever someone visits your site.
 
 #### Highlights
-* **New: Add icon for Touch devices (Android, iPhone, iPad, iPod Touch, etc.)**
+* **New: Set icon for Touch devices (Android, iPhone, iPad, iPod Touch, etc.)**
 * Simply point and click to add a favicon to your site
 * Supports adding **multiple icons**, from which a **randomly selected** favicon will be displayed.
 * Automatic icon conversion for large images (smaller files and faster loading)
@@ -48,15 +48,24 @@ No upgrade notices
 1. Favicon submenu in Appearance menu
 
 == Changelog ==
+
+= 1.2.1 =
+* Add: WP 3.3 Support
+* Update: Remove references to deprecated functions
+
 = 1.2 =
 * Add: Support for setting Touch icon (iOS, Android, etc.)
+
 = 1.1.2 =
 * Updated: Utilities code (internal)
+
 = 1.1 =
 * Added: Generate icon file from uploaded images
 * Added: Settings link from plugins page
 * Optimized: File path resolution
+
 = 1.0.1 =
 * Fix: Various bugs
+
 = 1.0 =
 * Initial release
