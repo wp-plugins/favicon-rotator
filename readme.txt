@@ -1,6 +1,6 @@
 === Favicon Rotator ===
 Contributors: Archetyped
-Donate link: http://archetyped.com/tools/favicon-rotator/#donate
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=AF29GFAFMT83N
 Tags: favicon,icon,template,theme,customization,simple,media,touch,ios,android
 Requires at least: 3.1.3
 Tested up to: 3.3
