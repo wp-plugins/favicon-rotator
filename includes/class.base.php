@@ -38,8 +38,8 @@ class FVRT_Base {
 	 * Constructor
 	 */
 	function __construct() {
-		$this->util =& new FVRT_Utilities();
-		$this->debug =& new FVRT_Debug();
+		$this->util = new FVRT_Utilities();
+		$this->debug = new FVRT_Debug();
 	}
 	
 	/**

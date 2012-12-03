@@ -111,7 +111,7 @@ class FaviconRotator extends FVRT_Base {
 		parent::__construct();
 		$this->opt_key = $this->add_prefix($this->opt_key);
 		$this->action_save = $this->add_prefix($this->action_save);
-		$this->media =& new FVRT_Media();
+		$this->media = new FVRT_Media();
 		$this->register_hooks();
 	}
 	

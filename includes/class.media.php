@@ -422,7 +422,7 @@ class FVRT_Media extends FVRT_Base {
 				}
 				//Add custom fields
 				if ( !empty($html) ) {
-					$form_fields[$this->var_query_data] = array('input' => 'html', 'html' => implode('', $html));
+					$form_fields[$this->var_query_data] = array('input' => 'html', 'html' => implode('', $html), 'label' => '');
 				}
 				
 				//Add "Set as Image" button (if valid attachment type)
@@ -431,7 +431,8 @@ class FVRT_Media extends FVRT_Base {
 				$field_html = $this->util->build_input_element('submit', $field_name, $set_as, array('class' => 'button'));
 				$field = array(
 					'input'		=> 'html',
-					'html'		=> $field_html
+					'html'		=> $field_html,
+					'label'		=> '',
 				);
 				$form_fields['buttons'] = $field;
 			}
