@@ -559,7 +559,14 @@ class FaviconRotator extends FVRT_Base {
 	 * Add contextual help to admin page
 	 */
 	function admin_help() {
-		$help = file_get_contents(dirname(__FILE__) . '/resources/admin_help.html');
-		add_contextual_help($this->page, $help);
+		$screen = get_current_screen();
+		if ( $screen->id == $this->page ) {
+			$help = file_get_contents(dirname(__FILE__) . '/resources/admin_help.html');
+			$screen->add_help_tab(array(
+				'id'	=> $this->add_prefix('help'),
+				'title'	=> __('Overview'),
+				'content'	=> $help,
+			));
+		}
 	}
 }
