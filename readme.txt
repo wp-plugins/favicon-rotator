@@ -2,8 +2,8 @@
 Contributors: Archetyped
 Donate link: http://mycharitywater.org/archetyped-2012-fall
 Tags: favicon,icon,template,theme,customization,simple,media,touch,ios,android
-Requires at least: 3.8
-Tested up to: 3.8
+Requires at least: 3.9
+Tested up to: 3.9
 Stable tag: trunk
 
 Easily set site favicon and even rotate through multiple icons
